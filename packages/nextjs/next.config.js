@@ -1,7 +1,10 @@
 // @ts-check
 
 /** @type {import('next').NextConfig} */
+const path = require("path");
+
 const nextConfig = {
+
   reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: process.env.NEXT_PUBLIC_IGNORE_BUILD_ERROR === "true",
@@ -14,6 +17,10 @@ const nextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+   turbopack: {
+    root: path.resolve(__dirname), // 👈 This tells Turbopack to treat this folder as the app root
+  },
+
 };
 
 module.exports = nextConfig;
