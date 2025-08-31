@@ -46,8 +46,11 @@ A Web3-native platform for startup founders to manage stakeholders, track fundin
 - ENS-based role management
 - Secure access control
 - Team collaboration tools
+- Save startup details on chain (Lisk)
 
 ![Team Management](./pics/Team_Roles.png)
+![Settings](./pics/Settings.png)
+
 
 ## Tech Stack
 
