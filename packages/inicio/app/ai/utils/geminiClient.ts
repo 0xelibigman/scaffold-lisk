@@ -12,7 +12,7 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
  */
 export async function sendToGemini(prompt: string): Promise<string> {
   // Try both the regular env var and the Next.js public env var
-  const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY;
 
   if (!apiKey) {
     throw new Error('GOOGLE_GENAI_API_KEY not set in environment variables. Make sure it is set as NEXT_PUBLIC_GOOGLE_GENAI_API_KEY for client components.');
@@ -80,7 +80,10 @@ function cleanupResponse(text: string): string {
     /^I've generated\s+[\w\s]+:?\s*/i,
     /^Based on\s+[\w\s]+:?\s*/i,
     /^Here's the\s+[\w\s]+:?\s*/i,
-    /^Certainly!?\s*/i
+    /^Certainly!?\s*/i,
+    /^I will?\s*/i,
+    /^As a[n]? [\w\s]+ expert,?\s*/i,
+    /^As?\s*/i
   ];
   
   for (const pattern of preambles) {

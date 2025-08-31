@@ -25,6 +25,10 @@ import {
   Shield,
   TrendingUp,
   FileCheck,
+  ChevronDown,
+  ChevronUp,
+  FileOutput,
+  Settings,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -149,6 +153,7 @@ export default function ComplianceDocsPage() {
   const [blockchainHash, setBlockchainHash] = useState<string>("")
   const [previewMode, setPreviewMode] = useState<"edit" | "preview">("edit")
   const [hasEdited, setHasEdited] = useState(false)
+  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false)
 
   const handleTemplateSelect = (template: DocumentTemplate) => {
     setSelectedTemplate(template)
@@ -193,6 +198,11 @@ export default function ComplianceDocsPage() {
         setGeneratedDoc(content);
         setOriginalDoc(content); // Store the original document
         setHasEdited(false); // Reset editing state
+        
+        // Collapse the details card to give more space to the document
+        setTimeout(() => {
+          setIsDetailsCollapsed(true);
+        }, 500); // Small delay for better UX
       }
     } catch (error) {
       console.error('Error generating document:', error);
@@ -235,23 +245,176 @@ export default function ComplianceDocsPage() {
     return markdownLines.join('\n');
   }
 
-  const saveDocument = () => {
+  const saveDocument = async () => {
     const docId = `DOC-${Date.now()}`
     setSavedDocId(docId)
+    
     // Simulate saving to dataLisk
     console.log("Document saved with ID:", docId)
+    
+    try {
+      // Generate a PDF file
+      const { default: jsPDF } = await import('jspdf');
+      
+      // Create a new PDF document
+      const doc = new jsPDF();
+      
+      // Convert markdown to plain text for better formatting
+      const plainText = generatedDoc
+        .replace(/^# (.*)/gm, '$1\n==============================')
+        .replace(/^## (.*)/gm, '$1\n------------------------------')
+        .replace(/^### (.*)/gm, '$1:')
+        .replace(/\*\*(.*?)\*\*/g, '$1');
+      
+      // Split text into lines to handle pagination
+      const lines = plainText.split('\n');
+      
+      // Add content to PDF
+      let y = 10;
+      const lineHeight = 7;
+      const pageHeight = doc.internal.pageSize.height - 20; // Leave margin
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.text(selectedTemplate?.name || "Document", 10, y);
+      y += lineHeight * 2;
+      
+      // Add content with normal font size
+      doc.setFontSize(12);
+      
+      // Add each line with proper line breaks
+      for (const line of lines) {
+        // Check if we need a new page
+        if (y > pageHeight) {
+          doc.addPage();
+          y = 10;
+        }
+        
+        // Add the line
+        if (line.includes('=====')) {
+          // Section title
+          doc.setFontSize(14);
+          doc.text(line.replace('==============================', '').trim(), 10, y);
+          doc.setFontSize(12);
+        } else if (line.includes('-----')) {
+          // Subsection
+          doc.setFontSize(13);
+          doc.text(line.replace('------------------------------', '').trim(), 10, y);
+          doc.setFontSize(12);
+        } else {
+          // Regular text
+          doc.text(line, 10, y);
+        }
+        y += lineHeight;
+      }
+      
+      // Save the PDF
+      doc.save(`${selectedTemplate?.name.replace(/\s+/g, "_")}_${docId}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      
+      // Fallback to text file if PDF generation fails
+      const plainText = generatedDoc
+        .replace(/^# (.*)/gm, '$1\n==============================')
+        .replace(/^## (.*)/gm, '$1\n------------------------------')
+        .replace(/^### (.*)/gm, '$1:')
+        .replace(/\*\*(.*?)\*\*/g, '$1');
+        
+      const blob = new Blob([plainText], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${selectedTemplate?.name.replace(/\s+/g, "_")}_${docId}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
     
     // Show save confirmation with edited indicator
     return docId
   }
 
-  const exportToPDF = () => {
-    // Export as a markdown file instead of plain text
-    const blob = new Blob([generatedDoc], { type: "text/markdown" })
+  const exportToPDF = async () => {
+    try {
+      // Dynamic import jspdf only when needed
+      const { default: jsPDF } = await import('jspdf');
+      
+      // Create a new PDF document
+      const doc = new jsPDF();
+      
+      // Convert markdown to plain text for better formatting
+      const plainText = generatedDoc
+        .replace(/^# (.*)/gm, '$1\n==============================')
+        .replace(/^## (.*)/gm, '$1\n------------------------------')
+        .replace(/^### (.*)/gm, '$1:')
+        .replace(/\*\*(.*?)\*\*/g, '$1');
+      
+      // Split text into lines to handle pagination
+      const lines = plainText.split('\n');
+      
+      // Add content to PDF
+      let y = 10;
+      const lineHeight = 7;
+      const pageHeight = doc.internal.pageSize.height - 20; // Leave margin
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.text(selectedTemplate?.name || "Document", 10, y);
+      y += lineHeight * 2;
+      
+      // Add content with normal font size
+      doc.setFontSize(12);
+      
+      // Add each line with proper line breaks
+      for (const line of lines) {
+        // Check if we need a new page
+        if (y > pageHeight) {
+          doc.addPage();
+          y = 10;
+        }
+        
+        // Add the line
+        if (line.includes('=====')) {
+          // Section title
+          doc.setFontSize(14);
+          doc.text(line.replace('==============================', '').trim(), 10, y);
+          doc.setFontSize(12);
+        } else if (line.includes('-----')) {
+          // Subsection
+          doc.setFontSize(13);
+          doc.text(line.replace('------------------------------', '').trim(), 10, y);
+          doc.setFontSize(12);
+        } else {
+          // Regular text
+          doc.text(line, 10, y);
+        }
+        y += lineHeight;
+      }
+      
+      // Save the PDF
+      doc.save(`${selectedTemplate?.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to text if PDF generation fails
+      exportAsText();
+    }
+  }
+  
+  const exportAsText = () => {
+    // Export as a formatted text file
+    const plainText = generatedDoc
+      .replace(/^# (.*)/gm, '$1\n==============================')
+      .replace(/^## (.*)/gm, '$1\n------------------------------')
+      .replace(/^### (.*)/gm, '$1:')
+      .replace(/\*\*(.*?)\*\*/g, '$1');
+    
+    // Create a text file that can be opened in any text editor
+    const blob = new Blob([plainText], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${selectedTemplate?.name.replace(/\s+/g, "_")}_${Date.now()}.md`
+    a.download = `${selectedTemplate?.name.replace(/\s+/g, "_")}_${Date.now()}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -336,104 +499,115 @@ export default function ComplianceDocsPage() {
           <p className="text-muted-foreground mt-2">{selectedTemplate.description}</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className={`grid lg:grid-cols-${isDetailsCollapsed && generatedDoc ? '1' : '2'} gap-8 transition-all duration-500 ease-in-out`}>
           {/* Form Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Document Details</CardTitle>
-              <CardDescription>Fill in the required information to generate your document</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedTemplate.fields.map((field) => (
-                <div key={field.name} className="space-y-2">
-                  <Label htmlFor={field.name}>
-                    {field.label}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-
-                  {field.type === "text" && (
-                    <Input
-                      id={field.name}
-                      value={formData[field.name] || ""}
-                      onChange={(e) => handleInputChange(field.name, e.target.value)}
-                      required={field.required}
-                    />
-                  )}
-
-                  {field.type === "textarea" && (
-                    <Textarea
-                      id={field.name}
-                      value={formData[field.name] || ""}
-                      onChange={(e) => handleInputChange(field.name, e.target.value)}
-                      required={field.required}
-                      rows={3}
-                    />
-                  )}
-
-                  {field.type === "number" && (
-                    <Input
-                      id={field.name}
-                      type="number"
-                      value={formData[field.name] || ""}
-                      onChange={(e) => handleInputChange(field.name, e.target.value)}
-                      required={field.required}
-                    />
-                  )}
-
-                  {field.type === "date" && (
-                    <Input
-                      id={field.name}
-                      type="date"
-                      value={formData[field.name] || ""}
-                      onChange={(e) => handleInputChange(field.name, e.target.value)}
-                      required={field.required}
-                    />
-                  )}
-
-                  {field.type === "select" && (
-                    <Select
-                      value={formData[field.name] || ""}
-                      onValueChange={(value) => handleInputChange(field.name, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {field.options?.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isDetailsCollapsed && generatedDoc ? 'max-h-16' : 'max-h-[2000px]'}`}>
+            <Card className={`${isDetailsCollapsed && generatedDoc ? 'cursor-pointer' : ''}`} onClick={() => generatedDoc && setIsDetailsCollapsed(!isDetailsCollapsed)}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Document Details</CardTitle>
+                  <CardDescription>Fill in the required information to generate your document</CardDescription>
                 </div>
-              ))}
-
-              <Button
-                onClick={generateDocument}
-                disabled={
-                  isGenerating || !selectedTemplate.fields.filter((f) => f.required).every((f) => formData[f.name])
-                }
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Document...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate with AI
-                  </>
+                {generatedDoc && (
+                  <Button variant="ghost" size="sm" className="ml-2" onClick={(e) => {e.stopPropagation(); setIsDetailsCollapsed(!isDetailsCollapsed)}}>
+                    {isDetailsCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+                  </Button>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isDetailsCollapsed && generatedDoc ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}>
+                <CardContent className="space-y-4">
+                  {selectedTemplate.fields.map((field) => (
+                    <div key={field.name} className="space-y-2">
+                      <Label htmlFor={field.name}>
+                        {field.label}
+                        {field.required && <span className="text-destructive ml-1">*</span>}
+                      </Label>
+
+                      {field.type === "text" && (
+                        <Input
+                          id={field.name}
+                          value={formData[field.name] || ""}
+                          onChange={(e) => handleInputChange(field.name, e.target.value)}
+                          required={field.required}
+                        />
+                      )}
+
+                      {field.type === "textarea" && (
+                        <Textarea
+                          id={field.name}
+                          value={formData[field.name] || ""}
+                          onChange={(e) => handleInputChange(field.name, e.target.value)}
+                          required={field.required}
+                          rows={3}
+                        />
+                      )}
+
+                      {field.type === "number" && (
+                        <Input
+                          id={field.name}
+                          type="number"
+                          value={formData[field.name] || ""}
+                          onChange={(e) => handleInputChange(field.name, e.target.value)}
+                          required={field.required}
+                        />
+                      )}
+
+                      {field.type === "date" && (
+                        <Input
+                          id={field.name}
+                          type="date"
+                          value={formData[field.name] || ""}
+                          onChange={(e) => handleInputChange(field.name, e.target.value)}
+                          required={field.required}
+                        />
+                      )}
+
+                      {field.type === "select" && (
+                        <Select
+                          value={formData[field.name] || ""}
+                          onValueChange={(value) => handleInputChange(field.name, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  ))}
+
+                  <Button
+                    onClick={generateDocument}
+                    disabled={
+                      isGenerating || !selectedTemplate.fields.filter((f) => f.required).every((f) => formData[f.name])
+                    }
+                    className="w-full"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Document...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate with AI
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </div>
+            </Card>
+          </div>
 
           {/* Generated Document Section */}
-          <div className="space-y-6">
+          <div className={`space-y-6 transition-all duration-500 ease-in-out ${isDetailsCollapsed && generatedDoc ? 'col-span-1' : ''}`}>
             {isGenerating && (
               <Card>
                 <CardHeader>
@@ -451,26 +625,18 @@ export default function ComplianceDocsPage() {
                     This might take a moment as we're crafting a tailored legal document based on your inputs...
                   </p>
                   <div className="flex flex-col items-center mt-4 w-full max-w-md">
-                    <div className="w-full bg-muted rounded-full h-1.5 mb-1">
-                      <div className="bg-primary h-1.5 rounded-full animate-progress"></div>
+                    <div className="w-full bg-muted rounded-full h-1.5 mb-1 overflow-hidden">
+                      <div className="bg-primary h-1.5 rounded-full w-4/5 relative animate-pulse origin-left">
+                        <div className="absolute h-full left-0 bg-white/20 w-16 transform -skew-x-12 animate-pulse"></div>
+                      </div>
                     </div>
-                    <style jsx>{`
-                      @keyframes progress {
-                        0% { width: 10%; }
-                        50% { width: 70%; }
-                        100% { width: 90%; }
-                      }
-                      .animate-progress {
-                        animation: progress 3s ease-in-out infinite alternate;
-                      }
-                    `}</style>
                   </div>
                 </CardContent>
               </Card>
             )}
             
             {generatedDoc && !isGenerating && (
-              <Card>
+              <Card className="transition-all duration-500 ease-in-out">
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div>
@@ -527,6 +693,18 @@ export default function ComplianceDocsPage() {
                           Reset
                         </Button>
                       )}
+                      
+                      {isDetailsCollapsed && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsDetailsCollapsed(false)}
+                          className="text-gray-700"
+                        >
+                          <Settings className="h-4 w-4 mr-1" />
+                          Show Details
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -543,7 +721,7 @@ export default function ComplianceDocsPage() {
                             setHasEdited(false);
                           }
                         }}
-                        height={400}
+                        height={isDetailsCollapsed ? 600 : 400}
                         preview={previewMode}
                         visibleDragbar={false}
                       />
@@ -561,8 +739,12 @@ export default function ComplianceDocsPage() {
                       Save Document
                     </Button>
                     <Button onClick={exportToPDF} variant="outline" size="sm">
-                      <Download className="mr-2 h-4 w-4" />
+                      <FileOutput className="mr-2 h-4 w-4" />
                       Export as PDF
+                    </Button>
+                    <Button onClick={exportAsText} variant="outline" size="sm">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export as Text
                     </Button>
                     <Button onClick={logToBlockchain} variant="outline" size="sm">
                       <LinkIcon className="mr-2 h-4 w-4" />
@@ -594,7 +776,7 @@ export default function ComplianceDocsPage() {
               </Card>
             )}
 
-            {generatedDoc && !isGenerating && (
+            {generatedDoc && !isGenerating && !isDetailsCollapsed && (
               <Card>
                 <CardHeader>
                   <CardTitle>Next Steps</CardTitle>
