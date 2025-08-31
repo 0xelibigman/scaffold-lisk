@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { useAccount, useReadContract, useWriteContract, type Address } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import type { Address } from 'viem';
 import { OnChainStartupProfile } from '../types/profile';
 import { startupProfileRegistryAbi } from '../constants/abis';
 import { contractAddresses, defaultNetwork } from '../config/networks';
@@ -23,8 +23,7 @@ export function useStartupProfile(address?: Address) {
   const { data, isLoading, error, refetch } = useReadContract({
     ...CONTRACT_CONFIG,
     functionName: 'getProfile',
-    args: [profileAddress],
-    enabled: !!profileAddress,
+    args: profileAddress ? [profileAddress] : undefined,
   });
 
   // Process the raw data into our TypeScript type
@@ -55,7 +54,7 @@ export function useStartupProfile(address?: Address) {
 export function useUpdateStartupProfile() {
   const { writeContractAsync, isPending, isSuccess, error } = useWriteContract();
   
-  const updateProfile = useCallback(async (profile: {
+  const updateProfile = async (profile: {
     name: string;
     description: string;
     website: string;
@@ -77,7 +76,7 @@ export function useUpdateStartupProfile() {
         profile.complianceRegion,
       ],
     });
-  }, [writeContractAsync]);
+  };
 
   return {
     updateProfile,
@@ -93,12 +92,12 @@ export function useUpdateStartupProfile() {
 export function useDeleteStartupProfile() {
   const { writeContractAsync, isPending, isSuccess, error } = useWriteContract();
   
-  const deleteProfile = useCallback(async () => {
+  const deleteProfile = async () => {
     return writeContractAsync({
       ...CONTRACT_CONFIG,
       functionName: 'deleteProfile',
     });
-  }, [writeContractAsync]);
+  };
 
   return {
     deleteProfile,

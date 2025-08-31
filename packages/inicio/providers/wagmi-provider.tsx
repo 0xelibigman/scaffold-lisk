@@ -5,10 +5,9 @@ import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider, http } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
-import { Chain } from 'wagmi';
 
 // Define the Lisk Sepolia Testnet with exact details
-const liskSepolia: Chain = {
+const liskSepolia = {
   id: 4202,
   name: 'Lisk Sepolia Testnet',
   network: 'lisk-sepolia',
