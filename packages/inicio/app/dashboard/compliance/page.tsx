@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import type { ContractInput } from "@/app/ai/types/ContractInput"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import dynamic from "next/dynamic"
 import {
   Download,
   Save,
@@ -25,6 +27,13 @@ import {
   FileCheck,
 } from "lucide-react"
 import Link from "next/link"
+
+// Import the Markdown editor with dynamic import to prevent SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false })
+
+// Add the required CSS styles
+import "@uiw/react-md-editor/markdown-editor.css"
+import "@uiw/react-markdown-preview/markdown.css"
 
 interface DocumentTemplate {
   id: string
@@ -55,7 +64,7 @@ const templates: DocumentTemplate[] = [
         label: "Jurisdiction",
         type: "select",
         required: true,
-        options: ["Delaware", "California", "New York", "Other"],
+        options: ["Buenos Aires", "California", "New York",  "Accra", "Other"],
       },
       { name: "effectiveDate", label: "Effective Date", type: "date", required: true },
       { name: "purpose", label: "Purpose of Disclosure", type: "textarea", required: true },
@@ -77,7 +86,7 @@ const templates: DocumentTemplate[] = [
         label: "Jurisdiction",
         type: "select",
         required: true,
-        options: ["Delaware", "California", "New York", "Other"],
+        options: ["Buenos Aires", "California", "New York",  "Accra", "Other"],
       },
     ],
   },
@@ -110,7 +119,7 @@ const templates: DocumentTemplate[] = [
         label: "Jurisdiction",
         type: "select",
         required: true,
-        options: ["Delaware", "California", "New York", "Other"],
+        options: ["Buenos Aires", "California", "New York",  "Accra", "Other"],
       },
     ],
   },
@@ -134,16 +143,21 @@ export default function ComplianceDocsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [generatedDoc, setGeneratedDoc] = useState<string>("")
+  const [originalDoc, setOriginalDoc] = useState<string>("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [savedDocId, setSavedDocId] = useState<string>("")
   const [blockchainHash, setBlockchainHash] = useState<string>("")
+  const [previewMode, setPreviewMode] = useState<"edit" | "preview">("edit")
+  const [hasEdited, setHasEdited] = useState(false)
 
   const handleTemplateSelect = (template: DocumentTemplate) => {
     setSelectedTemplate(template)
     setFormData({})
     setGeneratedDoc("")
+    setOriginalDoc("")
     setSavedDocId("")
     setBlockchainHash("")
+    setHasEdited(false)
   }
 
   const handleInputChange = (name: string, value: string) => {
@@ -154,33 +168,71 @@ export default function ComplianceDocsPage() {
     if (!selectedTemplate) return
 
     setIsGenerating(true)
-
-    // Simulate AI generation delay
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Generate document Liskd on template and form data
-    let docContent = ""
-
-    switch (selectedTemplate.id) {
-      case "nda":
-        docContent = generateNDA(formData)
-        break
-      case "investor-agreement":
-        docContent = generateInvestorAgreement(formData)
-        break
-      case "team-equity":
-        docContent = generateTeamEquity(formData)
-        break
-      case "mou":
-        docContent = generateMOU(formData)
-        break
-      case "progress-report":
-        docContent = generateProgressReport(formData)
-        break
+    
+    try {
+      // Import the AI generator
+      const { generateContract } = await import('@/app/ai/generators/generateContract');
+      
+      // Cast the form data to the appropriate contract type
+      const contractData = {
+        ...formData,
+        contractType: selectedTemplate.id,
+      } as unknown as ContractInput;
+      
+      const response = await generateContract(contractData);
+      
+      if (response.error) {
+        console.error('Error generating document:', response.error);
+      } else {
+        // Convert plain text to markdown format
+        let content = response.content;
+        
+        // Automatically convert headings and sections to markdown
+        content = convertToMarkdown(content);
+        
+        setGeneratedDoc(content);
+        setOriginalDoc(content); // Store the original document
+        setHasEdited(false); // Reset editing state
+      }
+    } catch (error) {
+      console.error('Error generating document:', error);
+    } finally {
+      setIsGenerating(false);
     }
-
-    setGeneratedDoc(docContent)
-    setIsGenerating(false)
+  }
+  
+  /**
+   * Converts plain text to markdown by detecting sections and headings
+   */
+  const convertToMarkdown = (text: string): string => {
+    // Split text into lines
+    const lines = text.split('\n');
+    let markdownLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Convert section titles/headings to markdown
+      if (/^[A-Z0-9\s\.]{2,}:?$/.test(line.trim()) && line.trim().length > 0) {
+        // This looks like a main heading/title (all caps)
+        markdownLines.push(`# ${line.trim()}`);
+      } else if (/^[0-9]+\.\s/.test(line)) {
+        // Numbered section
+        markdownLines.push(`## ${line.trim()}`);
+      } else if (/^[A-Z][A-Za-z\s]+:/.test(line)) {
+        // Section with colon
+        const parts = line.split(':');
+        markdownLines.push(`### ${parts[0].trim()}`);
+        if (parts[1] && parts[1].trim().length > 0) {
+          markdownLines.push(parts[1].trim());
+        }
+      } else {
+        // Regular line
+        markdownLines.push(line);
+      }
+    }
+    
+    return markdownLines.join('\n');
   }
 
   const saveDocument = () => {
@@ -188,15 +240,18 @@ export default function ComplianceDocsPage() {
     setSavedDocId(docId)
     // Simulate saving to dataLisk
     console.log("Document saved with ID:", docId)
+    
+    // Show save confirmation with edited indicator
+    return docId
   }
 
   const exportToPDF = () => {
-    // Simulate PDF export
-    const blob = new Blob([generatedDoc], { type: "text/plain" })
+    // Export as a markdown file instead of plain text
+    const blob = new Blob([generatedDoc], { type: "text/markdown" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${selectedTemplate?.name.replace(/\s+/g, "_")}_${Date.now()}.txt`
+    a.download = `${selectedTemplate?.name.replace(/\s+/g, "_")}_${Date.now()}.md`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -226,9 +281,9 @@ export default function ComplianceDocsPage() {
               className="text-3xl font-bold text-foreground text-balance"
               style={{ fontFamily: "var(--font-montserrat)" }}
             >
-              AI Compliance Docs
+              AI Legal Document Generator
             </h1>
-            <p className="text-muted-foreground mt-2">Generate legal documents with AI assistance</p>
+            <p className="text-muted-foreground mt-2">Generate and edit legal documents with AI assistance</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -379,15 +434,125 @@ export default function ComplianceDocsPage() {
 
           {/* Generated Document Section */}
           <div className="space-y-6">
-            {generatedDoc && (
+            {isGenerating && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Generated Document</CardTitle>
-                  <CardDescription>AI-generated legal document ready for review</CardDescription>
+                  <CardTitle>Generating Document</CardTitle>
+                  <CardDescription>Our AI is crafting your legal document...</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center p-8">
+                  <div className="relative w-24 h-24 mb-4">
+                    <div className="absolute top-0 left-0 w-full h-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                    <div className="absolute top-2 left-2 w-20 h-20 border-4 border-t-transparent border-r-primary border-b-transparent border-l-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                    <div className="absolute top-4 left-4 w-16 h-16 border-4 border-t-transparent border-r-transparent border-b-primary border-l-transparent rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
+                    <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary animate-pulse" />
+                  </div>
+                  <p className="text-center text-muted-foreground mt-4">
+                    This might take a moment as we're crafting a tailored legal document based on your inputs...
+                  </p>
+                  <div className="flex flex-col items-center mt-4 w-full max-w-md">
+                    <div className="w-full bg-muted rounded-full h-1.5 mb-1">
+                      <div className="bg-primary h-1.5 rounded-full animate-progress"></div>
+                    </div>
+                    <style jsx>{`
+                      @keyframes progress {
+                        0% { width: 10%; }
+                        50% { width: 70%; }
+                        100% { width: 90%; }
+                      }
+                      .animate-progress {
+                        animation: progress 3s ease-in-out infinite alternate;
+                      }
+                    `}</style>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {generatedDoc && !isGenerating && (
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>
+                        Generated Document
+                        {hasEdited && (
+                          <span className="ml-2 text-xs text-blue-500 font-normal">(edited)</span>
+                        )}
+                      </CardTitle>
+                      <CardDescription>AI-generated legal document ready for review</CardDescription>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setPreviewMode(previewMode === "edit" ? "preview" : "edit")}
+                        className={`${previewMode === "edit" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}`}
+                      >
+                        {previewMode === "edit" ? (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Preview
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9"></path>
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Edit
+                          </>
+                        )}
+                      </Button>
+                      
+                      {hasEdited && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setGeneratedDoc(originalDoc);
+                            setHasEdited(false);
+                          }}
+                          className="text-orange-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                            <path d="M21 3v5h-5"></path>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                            <path d="M8 16H3v5"></path>
+                          </svg>
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">{generatedDoc}</pre>
+                  <div className="mb-4">
+                    <div data-color-mode="light">
+                      <MDEditor
+                        value={generatedDoc}
+                        onChange={(value) => {
+                          setGeneratedDoc(value || "");
+                          if (value !== originalDoc) {
+                            setHasEdited(true);
+                          } else {
+                            setHasEdited(false);
+                          }
+                        }}
+                        height={400}
+                        preview={previewMode}
+                        visibleDragbar={false}
+                      />
+                    </div>
+                    {previewMode === "edit" && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        <span className="font-medium">Pro tip:</span> You can edit the document content directly to make any necessary changes. Click the Preview button to see how it will look when finalized.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-3 mt-4">
@@ -409,7 +574,10 @@ export default function ComplianceDocsPage() {
                     <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center text-green-800">
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Document saved with ID: {savedDocId}
+                        <div>
+                          <p>Document saved with ID: {savedDocId}</p>
+                          <p className="text-xs text-green-600 mt-1">Your edited document has been saved successfully.</p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -426,7 +594,7 @@ export default function ComplianceDocsPage() {
               </Card>
             )}
 
-            {generatedDoc && (
+            {generatedDoc && !isGenerating && (
               <Card>
                 <CardHeader>
                   <CardTitle>Next Steps</CardTitle>

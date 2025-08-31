@@ -6,8 +6,8 @@ export function Logo() {
       <Image
         src="/inicio-logo.png"
         alt="Inicio Logo"
-        width={60}
-        height={60}
+        width={100}
+        height={100}
         className="mr-4"
       />
       <span className="text-2xl font-black" style={{ fontFamily: "var(--font-montserrat)" }}>
