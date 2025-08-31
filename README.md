@@ -5,49 +5,49 @@
 
 A Web3-native platform for startup founders to manage stakeholders, track funding, and handle compliance documentation.
 
-![Inicio Dashboard](./packages/inicio/public/dashboard-preview.png)
+![Inicio](./pics/Home.png)
 
 ## Key Features
-
-### 🔐 Web3 Authentication
-Connect seamlessly with your Web3 wallet to access the platform.
-
-![Wallet Connection](./packages/inicio/public/wallet-connect.png)
 
 ### 📊 Smart Dashboard
 - Centralized view of startup metrics
 - Real-time blockchain data integration
 - Quick access to all platform features
 
-![Dashboard Main](./packages/inicio/public/dashboard-main.png)
+![Dashboard Main](./pics/Dashboard.png)
 
 ### 👥 Stakeholder CRM
 - Track investors, mentors, and team relationships
 - Organize stakeholder information
 - Monitor engagement metrics
 
-![Stakeholder View](./packages/inicio/public/stakeholder-view.png)
+![Stakeholder View](./pics/StakeholdeCRM.png)
 
 ### 💰 Funding Tracker
 - Monitor funding milestones
 - Track investor relationships
 - Blockchain-verified transactions
 
-![Funding Overview](./packages/inicio/public/funding-tracker.png)
+![Funding Overview](./pics/Funding_racker.png)
 
 ### 📝 AI-Powered Compliance
 - Generate legal documents with AI
 - Blockchain document verification
 - Automated compliance checks
 
-![Compliance View](./packages/inicio/public/compliance-view.png)
+![AI & Compliance View](./pics/AI_Legal_Doc.png)
+![AI NDA Generation View](./pics/NDA_Gen.png)
+![AI Generated View](./pics/Generated_NDA.png)
+![Investor Doc View](./pics/investor.png)
+
+
 
 ### 👥 Team & Roles (ENS)
 - ENS-based role management
 - Secure access control
 - Team collaboration tools
 
-![Team Management](./packages/inicio/public/team-view.png)
+![Team Management](./pics/Team_Roles.png)
 
 ## Tech Stack
 
