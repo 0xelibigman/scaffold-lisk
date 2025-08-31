@@ -1,8 +1,8 @@
-# Inicio - Stakeholder Management Platform
+# Inicio - Stakeholder Management Platform 
 [Pitch Deck](https://docs.google.com/presentation/d/1tuXAihf2nlqIBGD8T9focEzE0Tk2vcUFiYZa-q0LhFs/edit?usp=sharing )
 
 
-
+🌐[Live Link](https://inicio-crm.vercel.app/)
 A Web3-native platform for startup founders to manage stakeholders, track funding, and handle compliance documentation.
 
 ![Inicio](./pics/Home.png)
