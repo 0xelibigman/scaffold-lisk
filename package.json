@@ -5,7 +5,9 @@
   "workspaces": {
     "packages": [
       "packages/hardhat",
-      "packages/nextjs"
+      "packages/nextjs",
+      "packages/inicio",
+      "packages/shared"
     ]
   },
   "scripts": {

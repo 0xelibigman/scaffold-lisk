@@ -18,7 +18,7 @@ const nextConfig = {
     return config;
   },
    turbopack: {
-    root: path.resolve(__dirname), // 👈 This tells Turbopack to treat this folder as the app root
+    root: path.resolve(__dirname), 
   },
 
 };

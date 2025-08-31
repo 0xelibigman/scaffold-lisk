@@ -10,9 +10,7 @@ export function Logo() {
         height={100}
         className="mr-4"
       />
-      <span className="text-2xl font-black" style={{ fontFamily: "var(--font-montserrat)" }}>
-        Inicio
-      </span>
+  
     </div>
   )
 }

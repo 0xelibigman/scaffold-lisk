@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SimpleSelect } from "@/components/ui/simple-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -22,8 +22,14 @@ import {
   AlertCircle,
   Unlink,
   Plus,
+  ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
+// Import the blockchain hooks
+import { useUpdateStartupProfile, useStartupProfile } from "@/app/blockchain/hooks/useStartupProfile"
+import { getExplorerTxUrl, defaultNetwork } from "@/app/blockchain/config/networks"
+// Import ENS formatting utility
+import { formatAddressOrEns } from "@/app/blockchain/hooks/useEnsName"
 
 interface UserProfile {
   name: string
@@ -50,6 +56,7 @@ interface WalletConnection {
   network: string
   status: "connected" | "disconnected"
   connectedDate: string
+  ensName?: string | null
 }
 
 export default function SettingsPage() {
@@ -77,6 +84,7 @@ export default function SettingsPage() {
       network: "Lisk",
       status: "connected",
       connectedDate: "2024-01-15",
+      ensName: "alex.eth", // Added ENS name support
     },
     {
       id: "2",
@@ -85,17 +93,67 @@ export default function SettingsPage() {
       network: "Ethereum",
       status: "connected",
       connectedDate: "2024-01-10",
+      ensName: null, // No ENS name for this address
     },
   ])
 
   const [isSaving, setIsSaving] = useState(false)
+  const [currentTab, setCurrentTab] = useState('account')
+  
+  // Blockchain integration
+  const { updateProfile, isPending: isBlockchainUpdating, isSuccess: isBlockchainSuccess } = useUpdateStartupProfile();
+  const { profile: blockchainProfile, isLoading: isLoadingProfile, refetch: refetchProfile } = useStartupProfile();
+  const [isBlockchainError, setIsBlockchainError] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
+
+  // Load profile from blockchain when available
+  useEffect(() => {
+    if (blockchainProfile && !isLoadingProfile) {
+      setStartupProfile({
+        name: blockchainProfile.name,
+        description: blockchainProfile.description,
+        website: blockchainProfile.website,
+        industry: blockchainProfile.industry,
+        stage: blockchainProfile.stage,
+        complianceRegion: blockchainProfile.complianceRegion,
+      });
+    }
+  }, [blockchainProfile, isLoadingProfile]);
 
   const handleSaveProfile = async () => {
-    setIsSaving(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    // Show success message
+    setIsSaving(true);
+    setIsBlockchainError(false);
+    setTxHash(null);
+    
+    try {
+      // Save to blockchain
+      if (currentTab === 'startup') {
+        const tx = await updateProfile({
+          name: startupProfile.name,
+          description: startupProfile.description,
+          website: startupProfile.website || '',
+          industry: startupProfile.industry,
+          stage: startupProfile.stage,
+          complianceRegion: startupProfile.complianceRegion,
+        });
+        
+        if (tx) {
+          setTxHash(tx);
+          // Wait for transaction to be confirmed
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Refresh the profile from blockchain
+          await refetchProfile();
+        }
+      } else {
+        // For other tabs, just simulate a delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.error('Error saving profile to blockchain:', error);
+      setIsBlockchainError(true);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   const handleDisconnectWallet = (walletId: string) => {
@@ -124,7 +182,7 @@ export default function SettingsPage() {
           <p className="text-muted-foreground mt-2">Manage your account and startup profile</p>
         </div>
 
-        <Tabs defaultValue="account" className="space-y-6">
+        <Tabs defaultValue="account" className="space-y-6" onValueChange={setCurrentTab}>
           <TabsList>
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="startup">Startup Profile</TabsTrigger>
@@ -195,20 +253,16 @@ export default function SettingsPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select
+                    <SimpleSelect
                       value={userProfile.role}
                       onValueChange={(value) => setUserProfile({ ...userProfile, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CEO">CEO</SelectItem>
-                        <SelectItem value="CTO">CTO</SelectItem>
-                        <SelectItem value="Founder">Founder</SelectItem>
-                        <SelectItem value="Co-Founder">Co-Founder</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "CEO", label: "CEO" },
+                        { value: "CTO", label: "CTO" },
+                        { value: "Founder", label: "Founder" },
+                        { value: "Co-Founder", label: "Co-Founder" }
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -274,41 +328,33 @@ export default function SettingsPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="industry">Industry</Label>
-                    <Select
+                    <SimpleSelect
                       value={startupProfile.industry}
                       onValueChange={(value) => setStartupProfile({ ...startupProfile, industry: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SaaS">SaaS</SelectItem>
-                        <SelectItem value="Fintech">Fintech</SelectItem>
-                        <SelectItem value="Healthcare">Healthcare</SelectItem>
-                        <SelectItem value="E-commerce">E-commerce</SelectItem>
-                        <SelectItem value="AI/ML">AI/ML</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "SaaS", label: "SaaS" },
+                        { value: "Fintech", label: "Fintech" },
+                        { value: "Healthcare", label: "Healthcare" },
+                        { value: "E-commerce", label: "E-commerce" },
+                        { value: "AI/ML", label: "AI/ML" },
+                        { value: "Other", label: "Other" }
+                      ]}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="stage">Company Stage</Label>
-                    <Select
+                    <SimpleSelect
                       value={startupProfile.stage}
                       onValueChange={(value) => setStartupProfile({ ...startupProfile, stage: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Idea">Idea</SelectItem>
-                        <SelectItem value="MVP">MVP</SelectItem>
-                        <SelectItem value="Seed">Seed</SelectItem>
-                        <SelectItem value="Series A">Series A</SelectItem>
-                        <SelectItem value="Series B+">Series B+</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "Idea", label: "Idea" },
+                        { value: "MVP", label: "MVP" },
+                        { value: "Seed", label: "Seed" },
+                        { value: "Series A", label: "Series A" },
+                        { value: "Series B+", label: "Series B+" }
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -327,15 +373,51 @@ export default function SettingsPage() {
                   {isSaving ? (
                     <>
                       <Save className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      Saving to Blockchain...
                     </>
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Save Changes
+                      Save to Blockchain
                     </>
                   )}
                 </Button>
+                
+                {/* Blockchain transaction status */}
+                <div className="mt-4">
+                  {isBlockchainError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      <span>Error saving to blockchain. Please try again.</span>
+                    </div>
+                  )}
+                  
+                  {isBlockchainSuccess && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md text-green-600 flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <span>Successfully saved to Lisk blockchain!</span>
+                    </div>
+                  )}
+                  
+                  {txHash && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-600 flex items-center mt-2">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      <span className="text-sm">
+                        Transaction: {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                      </span>
+                      {defaultNetwork !== 'localhost' && (
+                        <a
+                          href={getExplorerTxUrl(txHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 underline"
+                        >
+                          View
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -368,7 +450,7 @@ export default function SettingsPage() {
                           </div>
                           <div className="text-sm text-muted-foreground">
                             <span className="font-mono">
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              {wallet.ensName || `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`}
                             </span>
                             <span className="ml-2">• {wallet.network}</span>
                           </div>
@@ -417,22 +499,18 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="complianceRegion">Compliance Region</Label>
-                  <Select
+                  <SimpleSelect
                     value={startupProfile.complianceRegion}
                     onValueChange={(value) => setStartupProfile({ ...startupProfile, complianceRegion: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Delaware">Delaware, USA</SelectItem>
-                      <SelectItem value="California">California, USA</SelectItem>
-                      <SelectItem value="New York">New York, USA</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
-                      <SelectItem value="Canada">Canada</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: "Delaware", label: "Delaware, USA" },
+                      { value: "California", label: "California, USA" },
+                      { value: "New York", label: "New York, USA" },
+                      { value: "UK", label: "United Kingdom" },
+                      { value: "Canada", label: "Canada" },
+                      { value: "Other", label: "Other" }
+                    ]}
+                  />
                   <p className="text-sm text-muted-foreground">
                     This affects the legal templates and compliance requirements in AI-generated documents
                   </p>

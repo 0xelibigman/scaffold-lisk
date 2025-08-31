@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { AddressOrEns } from "@/components/ui/address-or-ens"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import {
   Users,
@@ -16,6 +17,7 @@ import {
   UserPlus,
 } from "lucide-react"
 import Link from "next/link"
+import { type Address } from "viem"
 
 // Mock data for the funding chart
 const fundingData = [
@@ -40,9 +42,9 @@ const stakeholderActivity = [
 
 // Mock team data
 const teamMembers = [
-  { name: "Alex Founder", role: "CEO", ens: "alex.eth", status: "active" },
-  { name: "Sarah CTO", role: "CTO", ens: "sarah.eth", status: "active" },
-  { name: "Mike Dev", role: "Developer", ens: "mike.eth", status: "pending" },
+  { name: "Alex Founder", role: "CEO", address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as Address, status: "active" },
+  { name: "Sarah CTO", role: "CTO", address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" as Address, status: "active" },
+  { name: "Mike Dev", role: "Developer", address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" as Address, status: "pending" },
 ]
 
 export default function DashboardPage() {
@@ -205,7 +207,7 @@ export default function DashboardPage() {
                       <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-card">
                         <div>
                           <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.ens}</p>
+                          <AddressOrEns address={member.address} className="text-xs text-muted-foreground" showBlockExplorerLink={false} />
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-medium">{member.role}</p>

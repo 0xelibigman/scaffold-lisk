@@ -1,6 +1,7 @@
 'use client'
 
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useEnsName, formatAddressOrEns } from '@/app/blockchain/hooks/useEnsName'
 import { Button } from './button'
 
 interface WalletButtonProps {
@@ -19,6 +20,10 @@ export function WalletButton({ variant = 'default' }: WalletButtonProps) {
         mounted,
       }) => {
         const ready = mounted
+        // Use our custom ENS hook for name resolution
+        const { ensName } = useEnsName(account?.address as `0x${string}` || undefined);
+        const displayName = ensName || account?.displayName;
+        
         if (!ready) {
           return null
         }
@@ -59,7 +64,7 @@ export function WalletButton({ variant = 'default' }: WalletButtonProps) {
                 size="sm"
                 className="w-full justify-start"
               >
-                {account.displayName}
+                {displayName}
                 {account.displayBalance ? ` (${account.displayBalance})` : ''}
               </Button>
             </div>
@@ -80,7 +85,7 @@ export function WalletButton({ variant = 'default' }: WalletButtonProps) {
               variant="outline"
               size="sm"
             >
-              {account.displayName}
+              {displayName}
               {account.displayBalance ? ` (${account.displayBalance})` : ''}
             </Button>
           </div>

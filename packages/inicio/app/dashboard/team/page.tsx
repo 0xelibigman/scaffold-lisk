@@ -15,8 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SimpleSelect } from "@/components/ui/simple-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AddressOrEns } from "@/components/ui/address-or-ens"
 import {
   ArrowLeft,
   Shield,
@@ -31,11 +32,13 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+import { Address } from 'viem';
+
 interface TeamMember {
   id: string
   name: string
   email: string
-  ensId?: string
+  ensId?: Address
   role: "CEO" | "CTO" | "Developer" | "Designer" | "Marketing" | "Operations"
   privileges: string[]
   status: "active" | "pending" | "inactive"
@@ -46,7 +49,7 @@ interface TeamMember {
 interface PendingInvite {
   id: string
   email?: string
-  ensId?: string
+  ensId?: Address
   role: string
   invitedBy: string
   invitedDate: string
@@ -58,7 +61,7 @@ const mockTeamMembers: TeamMember[] = [
     id: "1",
     name: "Alex Founder",
     email: "alex@inicio.com",
-    ensId: "alex.eth",
+    ensId: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // This would resolve to an ENS name if registered
     role: "CEO",
     privileges: ["Admin", "Financial", "Legal", "Team Management"],
     status: "active",
@@ -69,7 +72,7 @@ const mockTeamMembers: TeamMember[] = [
     id: "2",
     name: "Sarah Chen",
     email: "sarah@inicio.com",
-    ensId: "sarah.eth",
+    ensId: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // This would resolve to an ENS name if registered
     role: "CTO",
     privileges: ["Technical", "Team Management", "Product"],
     status: "active",
@@ -80,7 +83,7 @@ const mockTeamMembers: TeamMember[] = [
     id: "3",
     name: "Mike Developer",
     email: "mike@inicio.com",
-    ensId: "mike.eth",
+    ensId: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // This would resolve to an ENS name if registered
     role: "Developer",
     privileges: ["Technical", "Product"],
     status: "pending",
@@ -100,7 +103,7 @@ const mockPendingInvites: PendingInvite[] = [
   },
   {
     id: "2",
-    ensId: "marketing.eth",
+    ensId: "0x90F79bf6EB2c4f870365E785982E1f101E93b906", // This would resolve to an ENS name if registered
     role: "Marketing",
     invitedBy: "Alex Founder",
     invitedDate: "2024-01-17",
@@ -126,7 +129,7 @@ export default function TeamPage() {
     const newInvite: PendingInvite = {
       id: Date.now().toString(),
       email: inviteMethod === "email" ? inviteData.email : undefined,
-      ensId: inviteMethod === "ens" ? inviteData.ensId : undefined,
+      ensId: inviteMethod === "ens" ? (inviteData.ensId as `0x${string}`) : undefined,
       role: inviteData.role,
       invitedBy: "Alex Founder",
       invitedDate: new Date().toISOString().split("T")[0],
@@ -230,21 +233,12 @@ export default function TeamPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select
+                    <SimpleSelect
                       value={inviteData.role}
                       onValueChange={(value) => setInviteData({ ...inviteData, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roleOptions.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={roleOptions.map(role => ({ value: role, label: role }))}
+                      placeholder="Select a role"
+                    />
                   </div>
 
                   <Button
@@ -300,7 +294,7 @@ export default function TeamPage() {
                           {member.ensId ? (
                             <div className="flex items-center space-x-2">
                               <Shield className="h-4 w-4 text-accent" />
-                              <span className="font-mono text-sm">{member.ensId}</span>
+                              <AddressOrEns address={member.ensId} showBlockExplorerLink={false} />
                             </div>
                           ) : (
                             <span className="text-muted-foreground">Not connected</span>
@@ -386,7 +380,7 @@ export default function TeamPage() {
                               ) : (
                                 <>
                                   <Shield className="h-4 w-4 text-accent" />
-                                  <span className="font-mono">{invite.ensId}</span>
+                                  <AddressOrEns address={invite.ensId as `0x${string}`} showBlockExplorerLink={false} />
                                 </>
                               )}
                             </div>
