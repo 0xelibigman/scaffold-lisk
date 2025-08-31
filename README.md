@@ -1,14 +1,58 @@
-<div align="left">
-  <a href="https://lisk.com"><img alt="Lisk" src="./packages/nextjs/public/readme-banner.png" width="100%"></a>
-</div>
+# Inicio - Stakeholder Management Platform
 
-<br />
+A Web3-native platform for startup founders to manage stakeholders, track funding, and handle compliance documentation.
 
-Scaffold-Lisk is a fork of Scaffold-OP with minimal differences, providing additional dApp examples, native support for Superchain testnets, and more low-level instructions. We highly recommend the Scaffold-ETH2 docs as the primary guideline.
+![Inicio Dashboard](./packages/inicio/public/dashboard-preview.png)
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+## Key Features
 
-⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, Viem, and Typescript.
+### 🔐 Web3 Authentication
+Connect seamlessly with your Web3 wallet to access the platform.
+
+![Wallet Connection](./packages/inicio/public/wallet-connect.png)
+
+### 📊 Smart Dashboard
+- Centralized view of startup metrics
+- Real-time blockchain data integration
+- Quick access to all platform features
+
+![Dashboard Main](./packages/inicio/public/dashboard-main.png)
+
+### 👥 Stakeholder CRM
+- Track investors, mentors, and team relationships
+- Organize stakeholder information
+- Monitor engagement metrics
+
+![Stakeholder View](./packages/inicio/public/stakeholder-view.png)
+
+### 💰 Funding Tracker
+- Monitor funding milestones
+- Track investor relationships
+- Blockchain-verified transactions
+
+![Funding Overview](./packages/inicio/public/funding-tracker.png)
+
+### 📝 AI-Powered Compliance
+- Generate legal documents with AI
+- Blockchain document verification
+- Automated compliance checks
+
+![Compliance View](./packages/inicio/public/compliance-view.png)
+
+### 👥 Team & Roles (ENS)
+- ENS-based role management
+- Secure access control
+- Team collaboration tools
+
+![Team Management](./packages/inicio/public/team-view.png)
+
+## Tech Stack
+
+Built with modern Web3 technologies:
+- Next.js 15
+- RainbowKit & Wagmi
+- Tailwind CSS
+- shadcn/ui components
 
 - ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
 - 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
@@ -20,47 +64,43 @@ Scaffold-Lisk is a fork of Scaffold-OP with minimal differences, providing addit
   <img alt="App demo" src="./packages/nextjs/public/scaffold-lisk-landing.png" width="100%">
 </div>
 
-## Requirements
+## Getting Started
 
-Before you begin, you need to install the following tools:
+### Prerequisites
+- Node.js >= 18.17
+- Yarn or npm
+- MetaMask or any Web3 wallet
 
-- [Node (>= v18.17)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+### Installation
 
-## Quickstart
-
-To get started with Scaffold-Lisk, follow the steps below:
-
-1. Clone this repo & install dependencies
-
+1. Clone the repository
+```bash
+git clone https://github.com/0xelibigman/inicio.git
+cd inicio
 ```
-git clone https://github.com/LiskHQ/scaffold-lisk.git
-cd scaffold-lisk
+
+2. Install dependencies
+```bash
+cd packages/inicio
 yarn install
 ```
 
-2. Run a local network in the first terminal:
-
-```
-yarn chain
-```
-
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `hardhat.config.ts`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
+3. Set up environment variables
+```bash
+cp .env.example .env.local
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On the same terminal, start your NextJS app:
-
+Add your WalletConnect Project ID to `.env.local`:
 ```
-yarn start
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
+
+4. Start the development server
+```bash
+yarn dev
+```
+
+Visit `http://localhost:3000` to access the application.
 
 Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
 

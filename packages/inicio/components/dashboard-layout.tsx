@@ -8,6 +8,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { WalletButton } from "@/components/ui/wallet-button"
+import { LogoSymbol } from "@/components/ui/logo"
 import { useDisconnect } from "wagmi"
 import {
   LayoutDashboard,
@@ -115,9 +116,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex flex-col flex-grow bg-sidebar border-r border-sidebar-border">
         <div className="p-6">
-          <h1 className="text-2xl font-black text-sidebar-foreground" style={{ fontFamily: "var(--font-montserrat)" }}>
-            Inicio
-          </h1>
+          <Link href="/dashboard">
+            <LogoSymbol />
+          </Link>
         </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
@@ -173,8 +174,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-5 w-5" />
             </Button>
-            <Link href="/dashboard" className="text-xl font-bold font-montserrat">
-              Inicio
+            <Link href="/dashboard">
+              <LogoSymbol />
             </Link>
             <WalletButton />
           </div>

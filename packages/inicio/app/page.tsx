@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight, Users, FileText, TrendingUp, Shield } from "lucide-react"
 import { WalletButton } from "@/components/ui/wallet-button"
+import { Logo } from "@/components/ui/logo"
 import { useAccount } from "wagmi"
 
 export default function LandingPage() {
@@ -22,11 +23,9 @@ export default function LandingPage() {
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-black text-primary" style={{ fontFamily: "var(--font-montserrat)" }}>
-                Inicio
-              </h1>
-            </div>
+            <Link href="/" className="flex items-center">
+              <Logo />
+            </Link>
             <nav className="hidden md:flex items-center space-x-8">
               <Link
                 href="#about"
